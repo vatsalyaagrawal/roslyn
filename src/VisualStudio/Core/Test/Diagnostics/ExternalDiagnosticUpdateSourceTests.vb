@@ -123,11 +123,11 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.Diagnostics
 
                 Dim service = New TestDiagnosticAnalyzerService(ImmutableArray(Of DiagnosticData).Empty)
                 Dim source = New ExternalErrorDiagnosticUpdateSource(workspace, service, New MockDiagnosticUpdateSourceRegistrationService(), waiter)
-                AddHandler source.BuildStarted, Sub(o, started)
-                                                    If Not started Then
-                                                        Assert.Equal(2, source.GetBuildErrors().Length)
-                                                    End If
-                                                End Sub
+                AddHandler source.BuildProgressChanged, Sub(o, progress)
+                                                            If progress = ExternalErrorDiagnosticUpdateSource.BuildProgress.Done Then
+                                                                Assert.Equal(2, source.GetBuildErrors().Length)
+                                                            End If
+                                                        End Sub
 
                 Dim map = New Dictionary(Of DocumentId, HashSet(Of DiagnosticData))()
                 map.Add(project.DocumentIds.First(), New HashSet(Of DiagnosticData)(
