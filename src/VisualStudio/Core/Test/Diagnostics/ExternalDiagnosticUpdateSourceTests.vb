@@ -284,6 +284,38 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.Diagnostics
             End Using
         End Function
 
+        <Fact>
+        Public Async Function TestBuildProgressUpdated() As Task
+            Using workspace = TestWorkspace.CreateCSharp(String.Empty)
+                Dim waiter = New AsynchronousOperationListener()
+
+                workspace.AddTestProject(New TestHostProject(workspace, language:=LanguageNames.CSharp))
+
+                Dim projectId1 = workspace.CurrentSolution.ProjectIds(0)
+                Dim projectId2 = workspace.CurrentSolution.ProjectIds(1)
+
+                Dim service = New TestDiagnosticAnalyzerService(ImmutableArray(Of DiagnosticData).Empty)
+                Dim source = New ExternalErrorDiagnosticUpdateSource(workspace, service, New MockDiagnosticUpdateSourceRegistrationService(), waiter)
+
+                source.AddNewErrors(projectId1, GetDiagnosticData(workspace, projectId1))
+                Await waiter.CreateWaitTask()
+
+                AddHandler source.BuildProgressChanged, Sub(o, progress)
+                                                            If progress = ExternalErrorDiagnosticUpdateSource.BuildProgress.Updated Then
+                                                                Assert.Equal(1, source.GetBuildErrors().Length)
+                                                            ElseIf progress = ExternalErrorDiagnosticUpdateSource.BuildProgress.Done Then
+                                                                Assert.Equal(2, source.GetBuildErrors().Length)
+                                                            End If
+                                                        End Sub
+
+                source.AddNewErrors(projectId2, GetDiagnosticData(workspace, projectId2))
+                Await waiter.CreateWaitTask()
+
+                source.OnSolutionBuild(Me, Shell.UIContextChangedEventArgs.From(False))
+                Await waiter.CreateWaitTask()
+            End Using
+        End Function
+
         Private Class CompilationEndAnalyzer
             Inherits DiagnosticAnalyzer
 
