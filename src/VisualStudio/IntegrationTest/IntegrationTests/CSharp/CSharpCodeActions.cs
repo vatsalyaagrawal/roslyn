@@ -140,7 +140,7 @@ class C
             VisualStudio.Editor.Verify.TextContains("Second?.");
         }
 
-        [WpfFact(Skip = "https://github.com/dotnet/roslyn/issues/30015")]
+        [CriticalWpfFact]
         [Trait(Traits.Feature, Traits.Features.EditorConfig)]
         [Trait(Traits.Feature, Traits.Features.CodeActionsFixAllOccurrences)]
         [WorkItem(15003, "https://github.com/dotnet/roslyn/issues/15003")]
@@ -317,12 +317,13 @@ public class P2 { }");
             var expectedItems = new[]
             {
                 "using System.IO;",
+                "Rename 'P2' to 'Stream'",
                 "System.IO.Stream",
                 "Generate class 'Stream' in new file",
                 "Generate class 'Stream'",
                 "Generate nested class 'Stream'",
                 "Generate new type...",
-                "Rename 'P2' to 'Stream'",
+                "Remove unused variable",
                 "Suppress CS0168",
                 "in Source"
             };
