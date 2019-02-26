@@ -6,8 +6,10 @@ using System.Collections.Immutable;
 using System.Threading;
 using Microsoft.CodeAnalysis.Classification;
 using Microsoft.CodeAnalysis.Completion;
+using Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.AsyncCompletion;
 using Microsoft.CodeAnalysis.Editor.Shared.Extensions;
 using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
+using Microsoft.CodeAnalysis.Extensions;
 using Microsoft.CodeAnalysis.Internal.Log;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
@@ -122,10 +124,18 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion.P
             {
                 if (SolutionLoadToolTip.Loading())
                 {
-                    _toolTipPresenter = _toolTipService.CreatePresenter(_textView, new ToolTipParameters(trackMouse: false, ignoreBufferChange: true));
-                    _toolTipPresenter.StartOrUpdate(triggerSpan,
-                        new[] { new ClassifiedTextElement(
-                        new ClassifiedTextRun(ClassificationTypeNames.Text, "Initializing IntelliSense …")) });
+                    if (SolutionLoadToolTip.Completion)
+                    {
+                        _toolTipPresenter = _toolTipService.CreatePresenter(_textView, new ToolTipParameters(trackMouse: false, ignoreBufferChange: true));
+                        _toolTipPresenter.StartOrUpdate(triggerSpan,
+                            new[] { new ClassifiedTextElement(
+                        new ClassifiedTextRun(ClassificationTypeNames.Text, SolutionLoadToolTip.Title)) });
+                    }
+
+                    if (SolutionLoadToolTip.GoldBar)
+                    {
+                        PartialModeInfoBar.Show();
+                    }
                 }
 
                 // We're tracking the caret.  Don't have the editor do it. 
@@ -260,6 +270,45 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion.P
             // we only report once. after that, this becomes noop
             _logger?.Dispose();
             _logger = null;
+        }
+
+        private static class PartialModeInfoBar
+        {
+            private static bool _shown = false;
+
+            public static void Show()
+            {
+                if (_shown)
+                {
+                    return;
+                }
+
+                var workspace = PrimaryWorkspace.Instance;
+                if (workspace == null)
+                {
+                    return;
+                }
+
+                if (SolutionLoadToolTip.NeverShowAgain)
+                {
+                    return;
+                }
+
+                _shown = true;
+
+                var infoBarService = workspace.Services.GetRequiredService<IInfoBarService>();
+                infoBarService.ShowInfoBarInGlobalView(
+                    SolutionLoadToolTip.Title,
+                    new InfoBarUI(title: "Nver Show Again",
+                                  kind: InfoBarUI.UIKind.Button,
+                                  action: () =>
+                                  {
+                                      SolutionLoadToolTip.NeverShowAgain = true;
+                                  }),
+                    new InfoBarUI(title: "Close",
+                                  kind: InfoBarUI.UIKind.Close,
+                                  action: () => { _shown = false; }));
+            }
         }
     }
 }

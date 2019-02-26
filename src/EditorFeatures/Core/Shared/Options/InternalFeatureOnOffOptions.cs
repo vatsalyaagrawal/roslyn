@@ -69,6 +69,21 @@ namespace Microsoft.CodeAnalysis.Editor.Shared.Options
 
         public static readonly Option<bool> ProjectReferenceConversion = new Option<bool>(nameof(InternalFeatureOnOffOptions), nameof(ProjectReferenceConversion), defaultValue: true,
             storageLocations: new LocalUserProfileStorageLocation(LocalRegistryPath + "Project Reference Conversion"));
+
+        public static readonly Option<string> PartialModeTitle = new Option<string>(nameof(InternalFeatureOnOffOptions), nameof(PartialModeTitle), defaultValue: "IntelliSense results may be incomplete at this time due to background work.",
+            storageLocations: new LocalUserProfileStorageLocation(LocalRegistryPath + nameof(PartialModeTitle)));
+
+        public static readonly Option<int> PartialModeDuration = new Option<int>(nameof(InternalFeatureOnOffOptions), nameof(PartialModeDuration), defaultValue: 60,
+            storageLocations: new LocalUserProfileStorageLocation(LocalRegistryPath + nameof(PartialModeDuration)));
+
+        public static readonly Option<bool> PartialModeGoldBar = new Option<bool>(nameof(InternalFeatureOnOffOptions), nameof(PartialModeGoldBar), defaultValue: false,
+            storageLocations: new LocalUserProfileStorageLocation(LocalRegistryPath + nameof(PartialModeGoldBar)));
+
+        public static readonly Option<bool> PartialModeCompletion = new Option<bool>(nameof(InternalFeatureOnOffOptions), nameof(PartialModeCompletion), defaultValue: false,
+            storageLocations: new LocalUserProfileStorageLocation(LocalRegistryPath + nameof(PartialModeCompletion)));
+
+        public static readonly Option<bool> PartialModeCompNeverShow = new Option<bool>(nameof(InternalFeatureOnOffOptions), nameof(PartialModeCompNeverShow), defaultValue: false);
+
     }
 
     [ExportOptionProvider, Shared]
@@ -93,6 +108,11 @@ namespace Microsoft.CodeAnalysis.Editor.Shared.Options
             InternalFeatureOnOffOptions.TodoComments,
             InternalFeatureOnOffOptions.DesignerAttributes,
             InternalFeatureOnOffOptions.FullSolutionAnalysisMemoryMonitor,
-            InternalFeatureOnOffOptions.ProjectReferenceConversion);
+            InternalFeatureOnOffOptions.ProjectReferenceConversion,
+            InternalFeatureOnOffOptions.PartialModeTitle,
+            InternalFeatureOnOffOptions.PartialModeDuration,
+            InternalFeatureOnOffOptions.PartialModeGoldBar,
+            InternalFeatureOnOffOptions.PartialModeCompletion,
+            InternalFeatureOnOffOptions.PartialModeCompNeverShow);
     }
 }

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
@@ -8,6 +9,7 @@ using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.Completion.Providers;
 using Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion;
 using Microsoft.CodeAnalysis.Editor.Shared.Extensions;
+using Microsoft.CodeAnalysis.Editor.Shared.Options;
 using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
 using Microsoft.CodeAnalysis.LanguageServices;
 using Microsoft.CodeAnalysis.Options;
@@ -103,7 +105,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.AsyncComplet
             CompletionService completionService)
         {
             // The trigger reason guarantees that user wants a completion.
-            if (trigger.Reason == AsyncCompletionData.CompletionTriggerReason.Invoke || 
+            if (trigger.Reason == AsyncCompletionData.CompletionTriggerReason.Invoke ||
                 trigger.Reason == AsyncCompletionData.CompletionTriggerReason.InvokeAndCommitIfUnique)
             {
                 return true;
@@ -256,7 +258,17 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.AsyncComplet
 
             var description = await service.GetDescriptionAsync(document, roslynItem, cancellationToken).ConfigureAwait(false);
 
-            return IntelliSense.Helpers.BuildClassifiedTextElement(description.TaggedParts);
+            var taggedParts = description.TaggedParts;
+
+            if (SolutionLoadToolTip.Completion &&
+                    SolutionLoadToolTip.Loading())
+            {
+                taggedParts = taggedParts.Add(new TaggedText(TextTags.LineBreak, "\r\n"))
+                                         .Add(new TaggedText(TextTags.LineBreak, "\r\n"))
+                                         .Add(new TaggedText(TextTags.Text, SolutionLoadToolTip.Title));
+            }
+
+            return IntelliSense.Helpers.BuildClassifiedTextElement(taggedParts);
         }
 
         private VSCompletionItem Convert(
@@ -365,6 +377,52 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.AsyncComplet
             }
 
             return current == questionPosition;
+        }
+    }
+
+    internal static class SolutionLoadToolTip
+    {
+        public static DateTime? _lastTimeShow;
+
+        private static void EnsureTracking()
+        {
+            if (!_lastTimeShow.HasValue)
+            {
+                _lastTimeShow = DateTime.UtcNow;
+            }
+        }
+
+        public static string Title =>
+            PrimaryWorkspace.Instance?.Options.GetOption(InternalFeatureOnOffOptions.PartialModeTitle) ?? "IntelliSense results may be incomplete at this time due to background work.";
+
+        public static bool GoldBar =>
+            PrimaryWorkspace.Instance?.Options.GetOption(InternalFeatureOnOffOptions.PartialModeGoldBar) ?? false;
+
+        public static bool Completion =>
+            PrimaryWorkspace.Instance?.Options.GetOption(InternalFeatureOnOffOptions.PartialModeCompletion) ?? false;
+
+        public static bool NeverShowAgain
+        {
+            get { return PrimaryWorkspace.Instance?.Options.GetOption(InternalFeatureOnOffOptions.PartialModeCompNeverShow) ?? false; }
+            set
+            {
+                var workspace = PrimaryWorkspace.Instance;
+                if (workspace == null)
+                {
+                    return;
+                }
+
+                workspace.Options = workspace.Options.WithChangedOption(InternalFeatureOnOffOptions.PartialModeCompNeverShow, true);
+            }
+        }
+
+        public static bool Loading()
+        {
+            EnsureTracking();
+
+            var maxTimeSpan = TimeSpan.FromSeconds(PrimaryWorkspace.Instance?.Options.GetOption(InternalFeatureOnOffOptions.PartialModeDuration) ?? 60);
+
+            return (DateTime.UtcNow - _lastTimeShow) < maxTimeSpan;
         }
     }
 }

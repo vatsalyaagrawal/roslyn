@@ -8,8 +8,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using Microsoft.CodeAnalysis.Completion;
+using Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.AsyncCompletion;
 using Microsoft.CodeAnalysis.Editor.Shared.Extensions;
+using Microsoft.CodeAnalysis.Editor.Shared.Options;
 using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.VisualStudio.Language.Intellisense;
@@ -91,7 +94,17 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion.P
                 }
 
                 var description = obj.Result;
-                this.Content = description.TaggedParts.ToTextBlock(_toolTipProvider._formatMap, _toolTipProvider._typeMap);
+                var result = description.TaggedParts.ToTextBlock(_toolTipProvider._formatMap, _toolTipProvider._typeMap);
+
+                if (SolutionLoadToolTip.Completion &&
+                    SolutionLoadToolTip.Loading())
+                {
+                    result.Inlines.Add(new LineBreak());
+                    result.Inlines.Add(new LineBreak());
+                    result.Inlines.Add(new Run(SolutionLoadToolTip.Title));
+                }
+
+                this.Content = result;
 
                 // The editor will pull AutomationProperties.Name from our UIElement and expose
                 // it to automation.

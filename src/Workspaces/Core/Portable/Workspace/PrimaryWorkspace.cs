@@ -10,6 +10,8 @@ namespace Microsoft.CodeAnalysis
     [Export(typeof(PrimaryWorkspace)), Shared]
     internal sealed class PrimaryWorkspace
     {
+        public static Workspace Instance;
+
         private readonly ReaderWriterLockSlim _registryGate = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
         private Workspace _primaryWorkspace;
 
@@ -45,6 +47,8 @@ namespace Microsoft.CodeAnalysis
             using (_registryGate.DisposableWrite())
             {
                 _primaryWorkspace = workspace;
+
+                Instance = workspace;
             }
         }
     }
