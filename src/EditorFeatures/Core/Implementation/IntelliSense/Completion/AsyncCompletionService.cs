@@ -33,13 +33,6 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
         private readonly IEnumerable<Lazy<IBraceCompletionSessionProvider, BraceCompletionMetadata>> _autoBraceCompletionChars;
         private readonly Dictionary<IContentType, ImmutableHashSet<char>> _autoBraceCompletionCharSet;
 
-        /// <summary>
-        /// The new completion API is not checked by default - null
-        /// false - disabled
-        /// true - enabled
-        /// </summary>
-        private bool? _newCompletionAPIEnabled = null;
-
         [ImportingConstructor]
         [Obsolete(MefConstruction.ImportingConstructorMessage, error: true)]
         public AsyncCompletionService(
